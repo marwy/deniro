@@ -16,30 +16,30 @@
 
 int NUMBER_OF_DESCRIPTORS = INITIAL_NUMBER_OF_DESCRIPTORS;
 
-enum Error {
+enum server_error {
   OUT_OF_ROOM = -1
 };
 
-struct Connection {
+struct connection {
   int socket_fd;
   char recv_buffer[MAX_MESSAGE_SIZE];
   char send_buffer[MAX_MESSAGE_SIZE];
 };
 
-struct Connection *connections;
+struct connection *connections;
 struct pollfd *socket_descriptors;
 
 int resize_socket_descriptors_and_connections(int amount, int previous_number_of_descriptors,
                                                struct pollfd **socket_descriptors,
-                                               struct Connection **connections) {
+                                               struct connection **connections) {
   *socket_descriptors = realloc(*socket_descriptors, (NUMBER_OF_DESCRIPTORS + amount) * sizeof(struct pollfd));
   if (socket_descriptors != NULL) {
     NUMBER_OF_DESCRIPTORS = NUMBER_OF_DESCRIPTORS + amount;
     memset(&((*socket_descriptors)[previous_number_of_descriptors + 1]), 0, amount * sizeof(struct pollfd)); // this!
   }
-  *connections = realloc(*connections, NUMBER_OF_DESCRIPTORS * sizeof(struct Connection));
+  *connections = realloc(*connections, NUMBER_OF_DESCRIPTORS * sizeof(struct connection));
   if (connections != NULL) {
-    memset(&(*connections)[previous_number_of_descriptors], 0, amount * sizeof(struct Connection));
+    memset(&(*connections)[previous_number_of_descriptors], 0, amount * sizeof(struct connection));
     return 0;
   }
   fprintf(stderr, "resizing socket descriptors and connections failed\n");
@@ -59,7 +59,7 @@ int add_new_client(struct pollfd socket_descriptors[], int socket) {
   return OUT_OF_ROOM;
 }
 
-int on_accept_new_client(struct pollfd **sd, size_t sd_index, struct addrinfo *addrinfo_result, struct Connection **connections) {
+int on_accept_new_client(struct pollfd **sd, size_t sd_index, struct addrinfo *addrinfo_result, struct connection **connections) {
   struct pollfd *socket_descriptors = *sd;
   int new_client = accept(socket_descriptors[sd_index].fd, addrinfo_result->ai_addr,
                           &addrinfo_result->ai_addrlen);
@@ -99,7 +99,7 @@ int on_receive_from_client(struct pollfd socket_descriptors[], size_t sd_index, 
     memset(&socket_descriptors[sd_index], 0, sizeof(struct pollfd));
   }
   else {
-    connections[sd_index] = (struct Connection) {.socket_fd=socket_descriptors[sd_index].fd};
+    connections[sd_index] = (struct connection) {.socket_fd=socket_descriptors[sd_index].fd};
     strcpy(connections[sd_index].recv_buffer, message);
     strcpy(connections[sd_index].send_buffer, "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\n\r\n");
     memset(message, 0, MAX_MESSAGE_SIZE);
@@ -108,7 +108,7 @@ int on_receive_from_client(struct pollfd socket_descriptors[], size_t sd_index, 
 }
 
 int on_send_to_client(struct pollfd socket_descriptors[], size_t sd_index) {
-  struct Connection conn = connections[sd_index];
+  struct connection conn = connections[sd_index];
   int total_sent = 0;
   int bytes_sent = 0;
   size_t buffer_actual_length = strlen(conn.send_buffer);
@@ -129,7 +129,7 @@ int on_send_to_client(struct pollfd socket_descriptors[], size_t sd_index) {
     return -1;
   }
 
-  connections[sd_index] = (struct Connection ) {0};
+  connections[sd_index] = (struct connection ) {0};
   total_sent = 0;
   bytes_sent = 0;
   return 0;
@@ -147,8 +147,8 @@ int server_loop() {
   socket_descriptors = malloc(INITIAL_NUMBER_OF_DESCRIPTORS * sizeof(struct pollfd));
   memset(socket_descriptors, 0, INITIAL_NUMBER_OF_DESCRIPTORS * sizeof(struct pollfd));
 
-  connections = malloc((INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct Connection));
-  memset(connections, 0, (INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct Connection));
+  connections = malloc((INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct connection));
+  memset(connections, 0, (INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct connection));
 
   if (getaddrinfo(NULL, "2000", &hints, &res) == -1) {
     perror("getaddrinfo");
@@ -200,7 +200,7 @@ int server_loop() {
         }
         else if (socket_descriptors[i].revents & POLLOUT) {
           if (socket_descriptors[i].fd != master_socket) {
-              struct Connection conn = connections[i];
+              struct connection conn = connections[i];
               if ((conn.socket_fd != 0) && (conn.socket_fd == socket_descriptors[i].fd)) {
                 int sent = on_send_to_client(socket_descriptors, i);
                 if (sent == -1)
