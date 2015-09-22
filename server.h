@@ -1,5 +1,5 @@
-#ifndef __server_h__
-#define __server_h__
+#ifndef SERVER_H
+#define SERVER_H
 
 int server_loop(void);
 
