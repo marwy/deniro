@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 char* read_rules_file(const char* path);
+struct rule_message_t *parse_rules(char *rules_string);
 
 typedef struct http_message_t rule_request_t;
 typedef struct http_message_t rule_response_t;

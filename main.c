@@ -34,6 +34,7 @@ struct app_args process_app_arguments(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
   struct app_args args = process_app_arguments(argc, argv);
-  read_rules_file(args.rules_file_name);
+  char *rules_string = read_rules_file(args.rules_file_name);
+  struct rule_message_t *rule_messages = parse_rules(rules_string);
   server_loop();
 };
