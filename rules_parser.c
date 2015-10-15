@@ -31,11 +31,14 @@ char *read_rules_file(const char *path) {
 };
 
 int advance_to_next_line(char *rules_string, int *begin, int *end) {
+  size_t rules_string_len = strlen(rules_string);
   if (!*end && (*end >= strlen(rules_string)))
       return -1;
   *begin = *end + 1;
   (*end)++; // move past the previous newline
-  while (rules_string[*end] != '\n') {
+  if (*end >= rules_string_len)
+    return -1;
+  while (rules_string[*end] && rules_string[*end] != '\n') {
     *end += 1;
   };
   return 0;
