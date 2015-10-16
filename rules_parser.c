@@ -96,16 +96,7 @@ char *parse_value(char *rules_string, int *line_begin, int *line_end, int value_
   char *value = malloc(value_length);
   for (int i = 0, si = 0; i < value_length; i++, si++) {
     char ch = rules_string[value_pos + i];
-    if (multiline_value) {
-      value[si] = ch;
-    }
-    else {
-      if (!isspace(ch)) {
-        value[si] = ch;
-      } else {
-        si--;
-      }
-    }
+    value[si] = ch;
   };
   value[value_length] = '\0';
   return value;
