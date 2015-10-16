@@ -9,7 +9,7 @@
 #include "rules_parser.h"
 
 #define SECTION_NAME_LENGTH 3
-
+#define IDENT_MATCH(k) strcmp(key, k) == 0
 
 char *read_rules_file(const char *path) {
   FILE *file = fopen(path, "r");
@@ -129,10 +129,8 @@ struct rule_message_t *parse_rules(char *rules_string) {
           key_end_index++; // move past the equal sign
 
           char *value = parse_value(rules_string, &current_line_begin, &current_line_end, key_end_index);
-
           printf("the value is %s\n", value);
 
-          #define IDENT_MATCH(k) strcmp(key, k) == 0
           if (IDENT_MATCH("url")) {
             current_message->request->url = value;
           } else if (IDENT_MATCH("name")) {
