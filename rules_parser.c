@@ -111,26 +111,28 @@ struct rule_message_t *parse_rules(char *rules_string) {
   struct rule_message_t *rule_message = malloc(sizeof(struct rule_message_t));
   struct rule_message_t *current_message;
 
-  while (advance_to_next_line(rules_string, &current_line_begin, &current_line_end) != -1) {
+  while (advance_to_next_line(rules_string, &current_line_begin, &current_line_end) != -1 && (current_line_begin < strlen(rules_string))) {
 
     if (rules_string[current_line_begin] == '[') {
       parse_section(rules_string, current_line_begin, section_name);
 
       advance_to_next_line(rules_string, &current_line_begin, &current_line_end);
 
-      if (strcmp(section_name, "req") == 0) {
+      if (strcmp(section_name, "req") == 0)
         current_message = malloc(sizeof(struct rule_message_t));
-        while (rules_string[current_line_begin] != '[') {
 
-          int key_end_index = 0;
-          char *key = parse_key(rules_string, current_line_begin, current_line_end, &key_end_index);
-          printf("the key is %s\n", key);
 
-          key_end_index++; // move past the equal sign
+      while (rules_string[current_line_begin] != '[' && !isspace(rules_string[current_line_begin]) && (current_line_begin < strlen(rules_string))) {
+        int key_end_index = 0;
+        char *key = parse_key(rules_string, current_line_begin, current_line_end, &key_end_index);
+        printf("the key is %s\n", key);
 
-          char *value = parse_value(rules_string, &current_line_begin, &current_line_end, key_end_index);
-          printf("the value is %s\n", value);
+        key_end_index++; // move past the equal sign
 
+        char *value = parse_value(rules_string, &current_line_begin, &current_line_end, key_end_index);
+        printf("the value is %s\n", value);
+
+        if (strcmp(section_name, "req") == 0) {
           if (IDENT_MATCH("url")) {
             current_message->request->url = value;
           } else if (IDENT_MATCH("name")) {
@@ -139,12 +141,24 @@ struct rule_message_t *parse_rules(char *rules_string) {
             /* current_message->request->method = value; */
             // TODO: method is an enum, value is a char *, so we need to map the method string to enum value
           }
-          advance_to_next_line(rules_string, &current_line_begin, &current_line_end);
+        }
+        else if (strcmp(section_name, "res") == 0) {
+          if (IDENT_MATCH("url")) {
+            current_message->response->url = value;
+          } else if (IDENT_MATCH("name")) {
+            current_message->response->name = value;
+          } else if (IDENT_MATCH("method")) {
+            /* current_message->request->method = value; */
+            // TODO: method is an enum, value is a char *, so we need to map the method string to enum value
+          }
         };
-      }
-      else if (strcmp(section_name, "res") == 0) {
-        printf("response type!\n");
+
+        advance_to_next_line(rules_string, &current_line_begin, &current_line_end);
       };
+
+      // undo advancing to the next line, otherwise we would forget the section
+      if (strcmp(section_name, "req") == 0)
+        current_line_end = current_line_begin - 1;
     };
   };
   return (rule_message);
