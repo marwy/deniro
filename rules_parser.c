@@ -5,11 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "http.h"
 #include "rules_parser.h"
 
 #define SECTION_NAME_LENGTH 3
-#define IDENT_MATCH(k) strcmp(key, k) == 0
+#define KEY_MATCH(k) strcmp(key, k) == 0
 
 char *read_rules_file(const char *path) {
   FILE *file = fopen(path, "r");
@@ -57,6 +56,11 @@ char *parse_key(char *rules_string, int line_begin, int line_end, int *equal_sig
     if (rules_string[line_begin_temp] == '=')
       break;
   };
+  if (line_begin_temp == line_end) {
+    fprintf(stderr, "We've reached the end of the line and still couldn't find '='\n");
+    fprintf(stderr, "Please fix your config \n");
+    exit(EXIT_FAILURE);
+  }
   size_t key_length = (line_begin_temp - line_begin) - 1;
   char *key = malloc(key_length);
   for (int i = 0; i < key_length; i++) {
@@ -102,14 +106,80 @@ char *parse_value(char *rules_string, int *line_begin, int *line_end, int value_
   return value;
 };
 
+enum HTTP_METHOD http_method_string_to_enum(char *string) {
+  if (islower(string[0])) {
+    for(int i = 0; i < strlen(string); i++) {
+      string[i] = toupper(string[i]);
+    };
+  }
+  if (strcmp(string, "HEAD") == 0)
+    return HEAD;
+  else if (strcmp(string, "GET") == 0)
+    return GET;
+  else if (strcmp(string, "POST") == 0)
+    return POST;
+  else if (strcmp(string, "PUT") == 0)
+    return PUT;
+  else if (strcmp(string, "OPTIONS") == 0)
+    return OPTIONS;
+  else if (strcmp(string, "DELETE") == 0)
+    return DELETE;
+  else {
+    fprintf(stderr, "Couldn't match value: %s with any HTTP method, falling back to default GET\n", string);
+    return GET;
+  }
+};
+
+struct rule_message_t *rule_message_new(void) {
+  // Note that the _headers_ field is actually malloc'ed later on (if needed)
+  struct rule_message_t *current_message = calloc(1, sizeof(struct rule_message_t));
+
+  current_message->request = calloc(1, sizeof(struct rule_request_t));
+  struct http_request_t *request = calloc(1, sizeof(struct http_request_t));
+  request->request_line = calloc(1, sizeof(struct http_request_line_t));
+  current_message->request->super = request;
+
+  current_message->response = calloc(1, sizeof(struct rule_response_t));
+  struct http_response_t *response = calloc(1, sizeof(struct http_response_t));
+  response->status_line = calloc(1, sizeof(struct http_status_line_t));
+  current_message->response->super = response;
+
+  return current_message;
+};
+
+struct http_header_t *add_header(struct http_header_t *headers, char *key, char *value) {
+  char *header_name = calloc(1, strlen(key) + 1);
+  strcpy(header_name, key);
+  if (!headers) {
+    headers = calloc(1, sizeof(struct http_header_t));
+    headers->name = header_name;
+    headers->value = value;
+  }
+  else {
+    struct http_header_t *temp_header = headers;
+    while (1) {
+      if (!temp_header->next_header) {
+        struct http_header_t *next_header = calloc(1, sizeof(struct http_header_t));
+        next_header->name = header_name;
+        next_header->value = value;
+        temp_header->next_header = next_header;
+        break;
+      }
+      else
+        temp_header = temp_header->next_header;
+    }
+  }
+  return headers;
+};
 
 struct rule_message_t *parse_rules(char *rules_string) {
   int current_line_begin = 0;
   // new beginning is basically an end + 1, so (-1) + 1 gets us a real beginning for the first line
   int current_line_end = -1;
   char section_name[3];
-  struct rule_message_t *rule_message = malloc(sizeof(struct rule_message_t));
-  struct rule_message_t *current_message;
+  struct rule_message_t *current_message = {0};
+  struct rule_message_t *rule_message = NULL;
+  struct rule_message_t *previous_message = NULL;
 
   while (advance_to_next_line(rules_string, &current_line_begin, &current_line_end) != -1 && (current_line_begin < strlen(rules_string))) {
 
@@ -118,48 +188,78 @@ struct rule_message_t *parse_rules(char *rules_string) {
 
       advance_to_next_line(rules_string, &current_line_begin, &current_line_end);
 
-      if (strcmp(section_name, "req") == 0)
-        current_message = malloc(sizeof(struct rule_message_t));
+      if (strcmp(section_name, "req") == 0) {
+        current_message = rule_message_new();
+      }
 
 
       while (rules_string[current_line_begin] != '[' && !isspace(rules_string[current_line_begin]) && (current_line_begin < strlen(rules_string))) {
         int key_end_index = 0;
         char *key = parse_key(rules_string, current_line_begin, current_line_end, &key_end_index);
-        printf("the key is %s\n", key);
 
         key_end_index++; // move past the equal sign
 
         char *value = parse_value(rules_string, &current_line_begin, &current_line_end, key_end_index);
-        printf("the value is %s\n", value);
 
         if (strcmp(section_name, "req") == 0) {
-          if (IDENT_MATCH("url")) {
-            current_message->request->url = value;
-          } else if (IDENT_MATCH("name")) {
-            current_message->request->name = value;
-          } else if (IDENT_MATCH("method")) {
-            /* current_message->request->method = value; */
-            // TODO: method is an enum, value is a char *, so we need to map the method string to enum value
+          struct http_request_t *request = current_message->request->super;
+          if (KEY_MATCH("name")) {
+            current_message->request->identifier = value;
+          } else if (KEY_MATCH("method")) {
+            enum HTTP_METHOD method = http_method_string_to_enum(value);
+            request->request_line->method = method;
+          } else if (KEY_MATCH("url")) {
+            request->request_line->url = value;
+          }  else if (KEY_MATCH("body")) {
+            request->body = value;
+          }  else {
+            // most likely we got ourselves a header
+            request->headers = add_header(request->headers, key, value);
           }
-        }
-        else if (strcmp(section_name, "res") == 0) {
-          if (IDENT_MATCH("url")) {
-            current_message->response->url = value;
-          } else if (IDENT_MATCH("name")) {
-            current_message->response->name = value;
-          } else if (IDENT_MATCH("method")) {
-            /* current_message->request->method = value; */
-            // TODO: method is an enum, value is a char *, so we need to map the method string to enum value
-          }
-        };
 
+        } else if (strcmp(section_name, "res") == 0) {
+          struct http_response_t *response = current_message->response->super;
+          if (KEY_MATCH("name")) {
+            current_message->response->identifier = value;
+          } else if (KEY_MATCH("status_code") || KEY_MATCH("status")) {
+            int status_code = atoi(value);
+            if (status_code)
+              response->status_line->status_code = status_code;
+            else
+              fprintf(stderr, "Couldn't parse value: %s to integer\n", value);
+          }  else if (KEY_MATCH("phrase")) {
+            response->status_line->reason_phrase = value;
+          } else if (KEY_MATCH("body")) {
+            response->body = value;
+          } else {
+            // most likely we got ourselves a header
+            response->headers = add_header(response->headers, key, value);
+          }
+
+        };
+        free(key);
         advance_to_next_line(rules_string, &current_line_begin, &current_line_end);
       };
 
       // undo advancing to the next line, otherwise we would forget the section
-      if (strcmp(section_name, "req") == 0)
+      if (strcmp(section_name, "req") == 0) {
         current_line_end = current_line_begin - 1;
+        if (!previous_message)
+          previous_message = current_message;
+        else {
+          previous_message->next = current_message;
+          previous_message = previous_message->next;
+        }
+
+        // setting just the rule_message as a head
+        if (!rule_message) {
+          rule_message = previous_message;
+        }
+        else if (!rule_message->next) {
+          rule_message->next = previous_message;
+        }
+      }
     };
   };
-  return (rule_message);
+  return rule_message;
 };
