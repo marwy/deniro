@@ -10,11 +10,13 @@ struct rule_message_t *parse_rules(char *rules_string);
 struct rule_request_t {
   struct http_request_t *super;
   const char *identifier;
+  struct rule_request_t *inherited_from;
 };
 
 struct rule_response_t {
   struct http_response_t *super;
   const char *identifier;
+  struct rule_response_t *inherited_from;
 };
 
 struct rule_message_t {

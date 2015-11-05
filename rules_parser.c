@@ -203,7 +203,18 @@ struct rule_message_t *parse_rules(char *rules_string) {
 
         if (strcmp(section_name, "req") == 0) {
           struct http_request_t *request = current_message->request->super;
-          if (KEY_MATCH("name")) {
+          if (KEY_MATCH("inherit")) {
+            struct rule_message_t *temp_message = rule_message;
+            while(temp_message) {
+              if (strcmp(temp_message->request->identifier, value) == 0) {
+                memcpy(current_message->request->super, temp_message->request->super, sizeof(struct http_request_t));
+                current_message->request->inherited_from = temp_message->request;
+                break;
+              }
+              else
+                temp_message = temp_message->next;
+            }
+          } else if (KEY_MATCH("name")) {
             current_message->request->identifier = value;
           } else if (KEY_MATCH("method")) {
             enum HTTP_METHOD method = http_method_string_to_enum(value);
@@ -219,7 +230,19 @@ struct rule_message_t *parse_rules(char *rules_string) {
 
         } else if (strcmp(section_name, "res") == 0) {
           struct http_response_t *response = current_message->response->super;
-          if (KEY_MATCH("name")) {
+          if (KEY_MATCH("inherit")) {
+            struct rule_message_t *temp_message = rule_message;
+            while(temp_message) {
+              if (strcmp(temp_message->response->identifier, value) == 0) {
+                memcpy(current_message->response->super, temp_message->response->super, sizeof(struct http_response_t));
+                current_message->response->inherited_from = temp_message->response;
+                break;
+              }
+              else
+                temp_message = temp_message->next;
+            }
+
+          } else if (KEY_MATCH("name")) {
             current_message->response->identifier = value;
           } else if (KEY_MATCH("status_code") || KEY_MATCH("status")) {
             int status_code = atoi(value);
@@ -261,5 +284,6 @@ struct rule_message_t *parse_rules(char *rules_string) {
       }
     };
   };
+
   return rule_message;
 };
