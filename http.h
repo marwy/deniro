@@ -41,4 +41,8 @@ struct http_response_t {
   struct http_header_t *headers;
   const char *body;
 };
+
+struct http_request_t *http_request_new(void);
+struct http_response_t *http_response_new(void);
+
 #endif

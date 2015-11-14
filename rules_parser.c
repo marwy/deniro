@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "rules_parser.h"
+#include "http.h"
 
 #define SECTION_NAME_LENGTH 3
 #define KEY_MATCH(k) strcmp(key, k) == 0
@@ -135,13 +136,11 @@ struct rule_message_t *rule_message_new(void) {
   struct rule_message_t *current_message = calloc(1, sizeof(struct rule_message_t));
 
   current_message->request = calloc(1, sizeof(struct rule_request_t));
-  struct http_request_t *request = calloc(1, sizeof(struct http_request_t));
-  request->request_line = calloc(1, sizeof(struct http_request_line_t));
+  struct http_request_t *request = http_request_new();
   current_message->request->super = request;
 
   current_message->response = calloc(1, sizeof(struct rule_response_t));
-  struct http_response_t *response = calloc(1, sizeof(struct http_response_t));
-  response->status_line = calloc(1, sizeof(struct http_status_line_t));
+  struct http_response_t *response = http_response_new();
   current_message->response->super = response;
 
   return current_message;
