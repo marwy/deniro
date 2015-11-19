@@ -8,17 +8,19 @@ CFLAGS = -g -Wall
 default: $(TARGET)
 all: default
 
-OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
-HEADERS = $(wildcard *.h)
+$(TARGET): main.o http.o rules_parser.o server.o
+	$(CC) main.o http.o rules_parser.o server.o -Wall $(LIBS) -o $(TARGET)
 
-%.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $< -o $@
+main.o: main.c
+http.o: http.c
+rules_parser.o: rules_parser.c
+server.o: server.c
 
-.PRECIOUS: $(TARGET) $(OBJECTS)
-
-$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
+test: http.o rules_parser.o server.o test_http.o test_main.o
+	$(CC) http.o rules_parser.o server.o test_http.o test_main.o  -Wall $(LIBS) -o test_$(TARGET)
+	./test_$(TARGET)
 
 clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
+	-rm -f test_$(TARGET)
