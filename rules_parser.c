@@ -107,30 +107,6 @@ char *parse_value(char *rules_string, int *line_begin, int *line_end, int value_
   return value;
 };
 
-enum HTTP_METHOD http_method_string_to_enum(char *string) {
-  if (islower(string[0])) {
-    for(int i = 0; i < strlen(string); i++) {
-      string[i] = toupper(string[i]);
-    };
-  }
-  if (strcmp(string, "HEAD") == 0)
-    return HEAD;
-  else if (strcmp(string, "GET") == 0)
-    return GET;
-  else if (strcmp(string, "POST") == 0)
-    return POST;
-  else if (strcmp(string, "PUT") == 0)
-    return PUT;
-  else if (strcmp(string, "OPTIONS") == 0)
-    return OPTIONS;
-  else if (strcmp(string, "DELETE") == 0)
-    return DELETE;
-  else {
-    fprintf(stderr, "Couldn't match value: %s with any HTTP method, falling back to default GET\n", string);
-    return GET;
-  }
-};
-
 struct rule_message_t *rule_message_new(void) {
   // Note that the _headers_ field is actually malloc'ed later on (if needed)
   struct rule_message_t *current_message = calloc(1, sizeof(struct rule_message_t));
