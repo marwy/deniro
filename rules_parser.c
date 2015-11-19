@@ -1,5 +1,4 @@
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
@@ -120,31 +119,6 @@ struct rule_message_t *rule_message_new(void) {
   current_message->response->super = response;
 
   return current_message;
-};
-
-struct http_header_t *add_header(struct http_header_t *headers, char *key, char *value) {
-  char *header_name = calloc(1, strlen(key) + 1);
-  strcpy(header_name, key);
-  if (!headers) {
-    headers = calloc(1, sizeof(struct http_header_t));
-    headers->name = header_name;
-    headers->value = value;
-  }
-  else {
-    struct http_header_t *temp_header = headers;
-    while (1) {
-      if (!temp_header->next_header) {
-        struct http_header_t *next_header = calloc(1, sizeof(struct http_header_t));
-        next_header->name = header_name;
-        next_header->value = value;
-        temp_header->next_header = next_header;
-        break;
-      }
-      else
-        temp_header = temp_header->next_header;
-    }
-  }
-  return headers;
 };
 
 struct rule_message_t *parse_rules(char *rules_string) {

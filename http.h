@@ -6,6 +6,7 @@
 struct http_request_t *http_request_new(void);
 struct http_response_t *http_response_new(void);
 enum HTTP_METHOD http_method_string_to_enum(char *string);
+struct http_header_t *add_header(struct http_header_t *headers, char *key, char *value);
 
 enum HTTP_METHOD {
   HEAD,
