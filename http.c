@@ -165,3 +165,59 @@ struct http_request_t *parse_http_request(char *buffer) {
 
   return request;
 };
+
+struct http_header_t *get_last_http_header(struct http_header_t *first_header) {
+  struct http_header_t *last_header = first_header;
+  while (last_header->next_header)
+    last_header = last_header->next_header;
+  return last_header;
+}
+
+void copy_http_headers(struct http_header_t *dest_hdr,
+                            struct http_header_t *source_hdr) {
+
+  struct http_header_t *temp_source_header = source_hdr;
+  struct http_header_t *temp_dest_header = dest_hdr;
+  struct http_header_t *last_header = get_last_http_header(temp_dest_header);
+  while(temp_source_header) {
+    char found = 0;
+    while(temp_dest_header) {
+      // note that we only care about the name of the header, its value equality
+      // should be checked when adding a header in parsing phase
+      if (strcmp(temp_dest_header->name, temp_source_header->name) == 0) {
+        found = 1;
+        break;
+      } else
+        temp_dest_header = temp_dest_header->next_header;
+    }
+    if (!found) {
+      struct http_header_t *temp_header = malloc(sizeof(struct http_header_t));
+      temp_header->name = malloc(strlen(temp_source_header->name) + 1);
+      temp_header->name = temp_source_header->name;
+      temp_header->value = malloc(strlen(temp_source_header->value) + 1);
+      temp_header->value = temp_source_header->value;
+
+      last_header->next_header = temp_header;
+      last_header = last_header->next_header;
+    }
+    temp_source_header = temp_source_header->next_header;
+  }
+}
+
+void copy_http_request(struct http_request_t *dest, struct http_request_t *src) {
+  if (!dest->request_line->method)
+    dest->request_line->method = src->request_line->method;
+  if (!dest->request_line->url)
+    dest->request_line->url = src->request_line->url;
+  if (!dest->request_line->http_version)
+    dest->request_line->http_version = src->request_line->http_version;
+
+  if (!dest->body)
+    dest->body = src->body;
+
+  if (!dest->headers)
+    dest->headers = src->headers;
+  else {
+    copy_http_headers(dest->headers, src->headers);
+  }
+}

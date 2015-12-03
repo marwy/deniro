@@ -1,8 +1,6 @@
 #include "deniro_assert.h"
 #include "http.h"
 
-struct http_request_t *parse_http_request(char *buffer);
-
 
 void test_http_parse_method(char *buffer) {
   struct http_request_t *request = parse_http_request(buffer);
@@ -37,4 +35,66 @@ void test_http_parse_body(char *buffer) {
   struct http_request_t *request = parse_http_request(buffer);
   den_assert(request);
   den_assert_str_eq(request->body, "delete=this&update=that");
+}
+
+void test_get_last_http_header(struct http_header_t *headers_start) {
+  struct http_header_t *last_header = get_last_http_header(headers_start);
+  den_assert_str_eq(last_header->name, "Third header");
+}
+
+void test_get_last_http_header_with_only_one_header(struct http_header_t *headers_start) {
+  struct http_header_t *last_header = get_last_http_header(headers_start);
+  den_assert_str_eq(last_header->name, "Third header");
+}
+
+void test_copy_http_headers() {
+  struct http_header_t *src_first = malloc(sizeof(struct http_header_t));
+  src_first->name = "First header";
+  src_first->value = "First header value";
+  struct http_header_t *src_second = malloc(sizeof(struct http_header_t));
+  src_second->name = "Second header";
+  src_second->value = "Second header with different value";
+  src_first->next_header = src_second;
+
+  struct http_header_t *dest_first = malloc(sizeof(struct http_header_t));
+  dest_first->name = "I'm an already existing header";
+  dest_first->value = "I'm an already existing header's VALUE";
+  struct http_header_t *dest_second = malloc(sizeof(struct http_header_t));
+  dest_second->name = "Second header";
+  dest_second->value = "Second header value";
+  dest_first->next_header = dest_second;
+  struct http_header_t *dest_third = malloc(sizeof(struct http_header_t));
+  dest_third->name = "I'm an already existing header number 3";
+  dest_third->value = "I'm an already existing header number 3's VALUE";
+  dest_second->next_header = dest_third;
+
+  copy_http_headers(dest_first, src_first);
+  den_assert_str_eq(dest_first->value,
+                    "I'm an already existing header's VALUE");
+  den_assert_str_eq(dest_first->next_header->value,
+                    "Second header value");
+  den_assert_str_eq(dest_first->next_header->next_header->value,
+                    "I'm an already existing header number 3's VALUE");
+  den_assert_str_eq(dest_first->next_header->next_header->next_header->value,
+                    "First header value");
+}
+
+void test_copy_http_request() {
+  struct http_request_t *dest_request = http_request_new();
+  dest_request->request_line->url = "/my-superduper-url/";
+  dest_request->request_line->method = PUT;
+
+  struct http_request_t *src_request = http_request_new();
+  src_request->request_line->method = DELETE;
+  src_request->body = "Imma delete you real hard.";
+  struct http_header_t *headers_start = malloc(sizeof(struct http_header_t));
+  headers_start->name = "First header";
+  headers_start->value = "First header's value";
+  src_request->headers = headers_start;
+
+  copy_http_request(dest_request, src_request);
+  den_assert_str_eq(dest_request->request_line->url, "/my-superduper-url/");
+  den_assert(dest_request->request_line->method == PUT);
+  den_assert_str_eq(dest_request->body, "Imma delete you real hard.");
+  den_assert(dest_request->headers == src_request->headers);
 }

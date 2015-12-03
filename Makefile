@@ -16,8 +16,8 @@ http.o: http.c
 rules_parser.o: rules_parser.c
 server.o: server.c
 
-test: http.o rules_parser.o server.o test_http.o test_main.o
-	$(CC) http.o rules_parser.o server.o test_http.o test_main.o  -Wall $(LIBS) -o test_$(TARGET)
+test: http.o rules_parser.o server.o test_http.o test_server.o test_runner.o
+	$(CC) http.o rules_parser.o server.o test_http.o test_server.o test_runner.o  -Wall $(LIBS) -o test_$(TARGET)
 	./test_$(TARGET)
 
 clean:

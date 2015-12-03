@@ -156,7 +156,7 @@ struct rule_message_t *parse_rules(char *rules_string) {
             struct rule_message_t *temp_message = rule_message;
             while(temp_message) {
               if (strcmp(temp_message->request->identifier, value) == 0) {
-                memcpy(current_message->request->super, temp_message->request->super, sizeof(struct http_request_t));
+                copy_http_request(current_message->request->super, temp_message->request->super);
                 current_message->request->inherited_from = temp_message->request;
                 break;
               }
