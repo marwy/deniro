@@ -221,3 +221,21 @@ void copy_http_request(struct http_request_t *dest, struct http_request_t *src) 
     copy_http_headers(dest->headers, src->headers);
   }
 }
+
+void copy_http_response(struct http_response_t *dest, struct http_response_t *src) {
+  if (!dest->status_line->status_code)
+    dest->status_line->status_code = src->status_line->status_code;
+  if (!dest->status_line->reason_phrase)
+    dest->status_line->reason_phrase = src->status_line->reason_phrase;
+  if (!dest->status_line->http_version)
+    dest->status_line->http_version = src->status_line->http_version;
+
+  if (!dest->body)
+    dest->body = src->body;
+
+  if (!dest->headers)
+    dest->headers = src->headers;
+  else {
+    copy_http_headers(dest->headers, src->headers);
+  }
+}

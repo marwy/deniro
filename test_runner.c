@@ -14,6 +14,7 @@ void test_get_last_http_header(struct http_header_t *headers_start);
 void test_get_last_http_header_with_only_one_header(struct http_header_t *headers_start);
 void test_copy_http_headers();
 void test_copy_http_request();
+void test_copy_http_response();
 
 void test_add_to_matches(void);
 void test_collect_matching_rules_for_request(void);
@@ -50,4 +51,5 @@ int main() {
 
   RUN_TEST("test_copy_http_headers", test_copy_http_headers);
   RUN_TEST("test_copy_http_request", test_copy_http_request);
+  RUN_TEST("test_copy_http_response", test_copy_http_response);
 }

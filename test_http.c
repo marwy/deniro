@@ -98,3 +98,24 @@ void test_copy_http_request() {
   den_assert_str_eq(dest_request->body, "Imma delete you real hard.");
   den_assert(dest_request->headers == src_request->headers);
 }
+
+void test_copy_http_response() {
+  struct http_response_t *dest_response = http_response_new();
+  dest_response->body = "You buchered something.";
+
+  struct http_response_t *src_response = http_response_new();
+  src_response->status_line->status_code = 500;
+  src_response->status_line->reason_phrase = "Bad Request";
+  src_response->body = "Something went wrong.";
+  struct http_header_t *headers_start = malloc(sizeof(struct http_header_t));
+  headers_start->name = "First header";
+  headers_start->value = "First header's value";
+  src_response->headers = headers_start;
+
+  copy_http_response(dest_response, src_response);
+  den_assert_str_eq(dest_response->body, "You buchered something.");
+  den_assert(dest_response->status_line->status_code == 500);
+  den_assert_str_eq(dest_response->status_line->reason_phrase,
+                    "Bad Request");
+  den_assert(dest_response->headers == src_response->headers);
+}
