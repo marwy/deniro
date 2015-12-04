@@ -52,6 +52,10 @@ struct http_header_t *add_header(struct http_header_t *headers, char *key, char 
   else {
     struct http_header_t *temp_header = headers;
     while (1) {
+      if (strcmp(temp_header->name, header_name) == 0) {
+        temp_header->value = value;
+        break;
+      }
       if (!temp_header->next_header) {
         struct http_header_t *next_header = calloc(1, sizeof(struct http_header_t));
         next_header->name = header_name;

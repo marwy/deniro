@@ -16,6 +16,7 @@ void test_copy_http_headers(void);
 void test_copy_http_request(void);
 void test_copy_http_response(void);
 void test_add_header(void);
+void test_add_header_with_same_name(void);
 
 void test_add_to_matches(void);
 void test_collect_matching_rules_for_request(void);
@@ -55,4 +56,5 @@ int main() {
   RUN_TEST("test_copy_http_response", test_copy_http_response);
 
   RUN_TEST("test_add_header", test_add_header);
+  RUN_TEST("test_add_header_with_same_name", test_add_header_with_same_name);
 }

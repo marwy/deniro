@@ -142,3 +142,28 @@ void test_add_header(void) {
   den_assert_str_eq(new_headers->next_header->next_header->next_header->value,
                     "Fourth header's value");
 }
+
+void test_add_header_with_same_name(void) {
+  struct http_header_t *headers = malloc(sizeof(struct http_header_t));
+  headers->name = "First header";
+  headers->value = "First header's value";
+
+  struct http_header_t *second_header = malloc(sizeof(struct http_header_t));
+  second_header->name = "Second header";
+  second_header->value = "Second header's value";
+  headers->next_header = second_header;
+
+  struct http_header_t *third_header = malloc(sizeof(struct http_header_t));
+  third_header->name = "Third header";
+  third_header->value = "Third header's value";
+  second_header->next_header = third_header;
+
+  struct http_header_t *new_headers = add_header(headers, "Second header",
+                                                 "Second header's DIFFERENT value");
+  den_assert(third_header->next_header == NULL); // no header was added
+  // header's value was replaced
+  den_assert_str_eq(new_headers->next_header->name,
+                    "Second header");
+  den_assert_str_eq(new_headers->next_header->value,
+                    "Second header's DIFFERENT value");
+}
