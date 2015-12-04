@@ -183,7 +183,7 @@ struct rule_message_t *parse_rules(char *rules_string) {
             struct rule_message_t *temp_message = rule_message;
             while(temp_message) {
               if (strcmp(temp_message->response->identifier, value) == 0) {
-                memcpy(current_message->response->super, temp_message->response->super, sizeof(struct http_response_t));
+                copy_http_response(current_message->response->super, temp_message->response->super);
                 current_message->response->inherited_from = temp_message->response;
                 break;
               }
