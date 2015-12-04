@@ -4,6 +4,7 @@ CC = gcc
 CFLAGS = -g -Wall
 
 .PHONY: default all clean
+.PRECIOUS: $(TARGET)
 
 default: $(TARGET)
 all: default
