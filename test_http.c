@@ -47,7 +47,7 @@ void test_get_last_http_header_with_only_one_header(struct http_header_t *header
   den_assert_str_eq(last_header->name, "Third header");
 }
 
-void test_copy_http_headers() {
+void test_copy_http_headers(void) {
   struct http_header_t *src_first = malloc(sizeof(struct http_header_t));
   src_first->name = "First header";
   src_first->value = "First header value";
@@ -79,7 +79,7 @@ void test_copy_http_headers() {
                     "First header value");
 }
 
-void test_copy_http_request() {
+void test_copy_http_request(void) {
   struct http_request_t *dest_request = http_request_new();
   dest_request->request_line->url = "/my-superduper-url/";
   dest_request->request_line->method = PUT;
@@ -99,7 +99,7 @@ void test_copy_http_request() {
   den_assert(dest_request->headers == src_request->headers);
 }
 
-void test_copy_http_response() {
+void test_copy_http_response(void) {
   struct http_response_t *dest_response = http_response_new();
   dest_response->body = "You buchered something.";
 
@@ -118,4 +118,27 @@ void test_copy_http_response() {
   den_assert_str_eq(dest_response->status_line->reason_phrase,
                     "Bad Request");
   den_assert(dest_response->headers == src_response->headers);
+}
+
+void test_add_header(void) {
+  struct http_header_t *headers = malloc(sizeof(struct http_header_t));
+  headers->name = "First header";
+  headers->value = "First header's value";
+
+  struct http_header_t *second_header = malloc(sizeof(struct http_header_t));
+  second_header->name = "Second header";
+  second_header->value = "Second header's value";
+  headers->next_header = second_header;
+
+  struct http_header_t *third_header = malloc(sizeof(struct http_header_t));
+  third_header->name = "Third header";
+  third_header->value = "Third header's value";
+  second_header->next_header = third_header;
+
+  struct http_header_t *new_headers = add_header(headers, "Fourth header",
+                                                 "Fourth header's value");
+  den_assert_str_eq(new_headers->next_header->next_header->next_header->name,
+                    "Fourth header");
+  den_assert_str_eq(new_headers->next_header->next_header->next_header->value,
+                    "Fourth header's value");
 }
