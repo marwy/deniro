@@ -15,4 +15,6 @@
     printf("*********** STRINGS DON'T MATCH expected: \"%s\" \t got: \"%s\" \t", \
            str2, str1); PRINT_FAIL }
 
+#define RUN_TEST(function_name, test_fun, args...) test_fun(args); printf("Finished  %s\n", function_name);
+
 #endif

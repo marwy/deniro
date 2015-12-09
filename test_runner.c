@@ -2,8 +2,7 @@
 #include <stdlib.h>
 
 #include "http.h"
-
-#define RUN_TEST(function_name, test_fun, args...) test_fun(args); printf("Finished  %s\n", function_name);
+#include "deniro_assert.h"
 
 void test_http_parse_method(char *buffer);
 void test_http_parse_url(char *buffer);
@@ -20,6 +19,8 @@ void test_add_header_with_same_name(void);
 
 void test_add_to_matches(void);
 void test_collect_matching_rules_for_request(void);
+
+void rules_parser_test_suite(void);
 
 int main() {
   char *buffer = "POST /test-url/ HTTP/1.1\r\nHost: localhost\r\nUser-Agent: I'm a robot 0.1\r\nContent-Length: 23\r\n\r\ndelete=this&update=that";
@@ -57,4 +58,6 @@ int main() {
 
   RUN_TEST("test_add_header", test_add_header);
   RUN_TEST("test_add_header_with_same_name", test_add_header_with_same_name);
+
+  rules_parser_test_suite();
 }
