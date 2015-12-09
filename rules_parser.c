@@ -214,8 +214,8 @@ struct rule_message_t *parse_rules(char *rules_string) {
       };
 
       // undo advancing to the next line, otherwise we would forget the section
+      current_line_end = current_line_begin - 1;
       if (strcmp(section_name, "req") == 0) {
-        current_line_end = current_line_begin - 1;
         if (!previous_message)
           previous_message = current_message;
         else {
