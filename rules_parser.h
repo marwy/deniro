@@ -2,6 +2,7 @@
 #define RULES_PARSER_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include "http.h"
 
 char* read_rules_file(const char* path);
@@ -10,12 +11,14 @@ struct rule_message_t *parse_rules(char *rules_string);
 struct rule_request_t {
   struct http_request_t *super;
   const char *identifier;
+  uint8_t accuracy;
   struct rule_request_t *inherited_from;
 };
 
 struct rule_response_t {
   struct http_response_t *super;
   const char *identifier;
+  uint8_t accuracy;
   struct rule_response_t *inherited_from;
 };
 
