@@ -168,13 +168,17 @@ struct rule_message_t *parse_rules(char *rules_string) {
           } else if (KEY_MATCH("method")) {
             enum HTTP_METHOD method = http_method_string_to_enum(value);
             request->request_line->method = method;
+            current_message->request->accuracy += 1;
           } else if (KEY_MATCH("url")) {
             request->request_line->url = value;
+            current_message->request->accuracy += 1;
           }  else if (KEY_MATCH("body")) {
             request->body = value;
+            current_message->request->accuracy += 1;
           }  else {
             // most likely we got ourselves a header
             request->headers = add_header(request->headers, key, value);
+            current_message->request->accuracy += 1;
           }
 
         } else if (strcmp(section_name, "res") == 0) {
@@ -190,22 +194,26 @@ struct rule_message_t *parse_rules(char *rules_string) {
               else
                 temp_message = temp_message->next;
             }
-
           } else if (KEY_MATCH("name")) {
             current_message->response->identifier = value;
           } else if (KEY_MATCH("status_code") || KEY_MATCH("status")) {
             int status_code = atoi(value);
-            if (status_code)
+            if (status_code) {
               response->status_line->status_code = status_code;
+              current_message->response->accuracy += 1;
+            }
             else
               fprintf(stderr, "Couldn't parse value: %s to integer\n", value);
           }  else if (KEY_MATCH("phrase")) {
             response->status_line->reason_phrase = value;
+            current_message->response->accuracy += 1;
           } else if (KEY_MATCH("body")) {
             response->body = value;
+            current_message->response->accuracy += 1;
           } else {
             // most likely we got ourselves a header
             response->headers = add_header(response->headers, key, value);
+            current_message->response->accuracy += 1;
           }
 
         };
