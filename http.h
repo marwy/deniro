@@ -14,6 +14,7 @@ void copy_http_headers(struct http_header_t *dest, struct http_header_t *src);
 void copy_http_response(struct http_response_t *dest, struct http_response_t *src);
 
 enum HTTP_METHOD {
+  NO_METHOD,
   HEAD,
   GET,
   POST,
