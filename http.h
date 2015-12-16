@@ -10,7 +10,7 @@ struct http_header_t *add_header(struct http_header_t *headers, char *key, char 
 struct http_request_t *parse_http_request(char *buffer);
 struct http_header_t *get_last_http_header(struct http_header_t *headers_start);
 void copy_http_request(struct http_request_t *dest, struct http_request_t *src);
-void copy_http_headers(struct http_header_t *dest, struct http_header_t *src);
+void copy_http_headers(struct http_header_t **dest, struct http_header_t *src);
 void copy_http_response(struct http_response_t *dest, struct http_response_t *src);
 
 enum HTTP_METHOD {

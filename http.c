@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "http.h"
 
@@ -172,37 +173,46 @@ struct http_request_t *parse_http_request(char *buffer) {
 
 struct http_header_t *get_last_http_header(struct http_header_t *first_header) {
   struct http_header_t *last_header = first_header;
+  if (!last_header)
+    return last_header; // aint nobody got time for babysitting
   while (last_header->next_header)
     last_header = last_header->next_header;
   return last_header;
 }
 
-void copy_http_headers(struct http_header_t *dest_hdr,
+void copy_http_headers(struct http_header_t **dest_hdr,
                             struct http_header_t *source_hdr) {
 
   struct http_header_t *temp_source_header = source_hdr;
-  struct http_header_t *temp_dest_header = dest_hdr;
+  struct http_header_t *temp_dest_header = *dest_hdr;
   struct http_header_t *last_header = get_last_http_header(temp_dest_header);
   while(temp_source_header) {
-    char found = 0;
+    bool found = false;
     while(temp_dest_header) {
       // note that we only care about the name of the header, its value equality
       // should be checked when adding a header in parsing phase
       if (strcmp(temp_dest_header->name, temp_source_header->name) == 0) {
-        found = 1;
+        found = true;
         break;
       } else
         temp_dest_header = temp_dest_header->next_header;
     }
     if (!found) {
       struct http_header_t *temp_header = malloc(sizeof(struct http_header_t));
-      temp_header->name = malloc(strlen(temp_source_header->name) + 1);
-      temp_header->name = temp_source_header->name;
-      temp_header->value = malloc(strlen(temp_source_header->value) + 1);
-      temp_header->value = temp_source_header->value;
-
-      last_header->next_header = temp_header;
-      last_header = last_header->next_header;
+      char *name = malloc(strlen(temp_source_header->name) + 1);
+      strcpy(name, temp_source_header->name);
+      char *value = malloc(strlen(temp_source_header->value) + 1);
+      strcpy(value, temp_source_header->value);
+      temp_header->name = name;
+      temp_header->value = value;
+      if (!*dest_hdr)
+        *dest_hdr = temp_header;
+      if (!last_header)
+        last_header = temp_header;
+      else {
+        last_header->next_header = temp_header;
+        last_header = last_header->next_header;
+      }
     }
     temp_source_header = temp_source_header->next_header;
   }
@@ -219,11 +229,7 @@ void copy_http_request(struct http_request_t *dest, struct http_request_t *src) 
   if (!dest->body)
     dest->body = src->body;
 
-  if (!dest->headers)
-    dest->headers = src->headers;
-  else {
-    copy_http_headers(dest->headers, src->headers);
-  }
+  copy_http_headers(&dest->headers, src->headers);
 }
 
 void copy_http_response(struct http_response_t *dest, struct http_response_t *src) {
@@ -237,9 +243,5 @@ void copy_http_response(struct http_response_t *dest, struct http_response_t *sr
   if (!dest->body)
     dest->body = src->body;
 
-  if (!dest->headers)
-    dest->headers = src->headers;
-  else {
-    copy_http_headers(dest->headers, src->headers);
-  }
+  copy_http_headers(&dest->headers, src->headers);
 }

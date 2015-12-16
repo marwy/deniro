@@ -68,7 +68,7 @@ void test_copy_http_headers(void) {
   dest_third->value = "I'm an already existing header number 3's VALUE";
   dest_second->next_header = dest_third;
 
-  copy_http_headers(dest_first, src_first);
+  copy_http_headers(&dest_first, src_first);
   den_assert_str_eq(dest_first->value,
                     "I'm an already existing header's VALUE");
   den_assert_str_eq(dest_first->next_header->value,
@@ -77,6 +77,9 @@ void test_copy_http_headers(void) {
                     "I'm an already existing header number 3's VALUE");
   den_assert_str_eq(dest_first->next_header->next_header->next_header->value,
                     "First header value");
+  // just making sure we have not accidentaly changed src's headers
+  dest_first->next_header->next_header->next_header->value = "Test";
+  den_assert_str_eq(src_first->value, "First header value");
 }
 
 void test_copy_http_request(void) {
@@ -96,7 +99,8 @@ void test_copy_http_request(void) {
   den_assert_str_eq(dest_request->request_line->url, "/my-superduper-url/");
   den_assert(dest_request->request_line->method == PUT);
   den_assert_str_eq(dest_request->body, "Imma delete you real hard.");
-  den_assert(dest_request->headers == src_request->headers);
+  den_assert_str_eq(dest_request->headers->name, "First header");
+  den_assert_str_eq(dest_request->headers->value, "First header's value");
 }
 
 void test_copy_http_response(void) {
@@ -117,7 +121,8 @@ void test_copy_http_response(void) {
   den_assert(dest_response->status_line->status_code == 500);
   den_assert_str_eq(dest_response->status_line->reason_phrase,
                     "Bad Request");
-  den_assert(dest_response->headers == src_response->headers);
+  den_assert_str_eq(dest_response->headers->name, "First header");
+  den_assert_str_eq(dest_response->headers->value, "First header's value");
 }
 
 void test_add_header(void) {
