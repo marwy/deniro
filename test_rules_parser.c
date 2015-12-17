@@ -36,7 +36,6 @@ void test_rules_parser() {
   den_assert_str_eq(rules->response->super->body, "response body");
   den_assert_str_eq(rules->response->identifier, "generic contact res");
   den_assert(rules->request->accuracy == 2);
-  den_assert(rules->response->accuracy == 1);
 
   next_rule = rules->next;
   den_assert_str_eq(next_rule->request->super->request_line->url,
@@ -48,7 +47,6 @@ void test_rules_parser() {
   den_assert_str_eq(next_rule->response->super->headers->name, "Tracking-ID");
   den_assert_str_eq(next_rule->response->super->headers->value, "0xdeadbeef");
   den_assert(next_rule->request->accuracy == 3);
-  den_assert(next_rule->response->accuracy == 2);
 
   next_rule = next_rule->next;
   den_assert_str_eq(next_rule->request->super->request_line->url,
@@ -58,7 +56,6 @@ void test_rules_parser() {
                     "subject=to hell with c");
   den_assert_str_eq(next_rule->response->super->body, "response");
   den_assert(next_rule->request->accuracy == 3);
-  den_assert(next_rule->response->accuracy == 2);
 }
 
 void rules_parser_test_suite(void) {

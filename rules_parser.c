@@ -200,20 +200,16 @@ struct rule_message_t *parse_rules(char *rules_string) {
             int status_code = atoi(value);
             if (status_code) {
               response->status_line->status_code = status_code;
-              current_message->response->accuracy += 1;
             }
             else
               fprintf(stderr, "Couldn't parse value: %s to integer\n", value);
           }  else if (KEY_MATCH("phrase")) {
             response->status_line->reason_phrase = value;
-            current_message->response->accuracy += 1;
           } else if (KEY_MATCH("body")) {
             response->body = value;
-            current_message->response->accuracy += 1;
           } else {
             // most likely we got ourselves a header
             response->headers = add_header(response->headers, key, value);
-            current_message->response->accuracy += 1;
           }
 
         };

@@ -18,7 +18,6 @@ struct rule_request_t {
 struct rule_response_t {
   struct http_response_t *super;
   const char *identifier;
-  uint8_t accuracy;
   struct rule_response_t *inherited_from;
 };
 
