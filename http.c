@@ -42,6 +42,65 @@ enum HTTP_METHOD http_method_string_to_enum(char *string) {
   }
 };
 
+char *http_response_to_string(struct http_response_t *response) {
+  size_t headers_length = 0;
+  size_t body_length = 0;
+  struct http_header_t *temp_header;
+
+  const char *http_version = response->status_line->http_version;
+  char *status_code = malloc(5); // max of uint16
+  sprintf(status_code, "%d", response->status_line->status_code);
+  const char *reason_phrase = response->status_line->reason_phrase;
+  // include space for spaces and CRLF at the end
+  size_t status_line_length = strlen(status_code) + 1 + strlen(reason_phrase) + 1 +
+    strlen(http_version) + 2;
+
+  temp_header = response->headers;
+  while(temp_header) {
+    // includes space for colon, space and CRLF
+    size_t header_length = strlen(temp_header->name) +
+      strlen(temp_header->value) + 4;
+    headers_length += header_length;
+    temp_header = temp_header->next_header;
+  }
+
+  if (response->body) {
+    body_length = strlen(response->body);
+
+    temp_header = response->headers;
+    bool found = false;
+    while(temp_header) {
+      if (strcmp(temp_header->name, "Content-Length") == 0) {
+        found = true;
+        break;
+      }
+      temp_header = temp_header->next_header;
+    }
+    if (!found) {
+      char body_length_as_string[1024];
+      snprintf(body_length_as_string, 1024, "%zd", body_length);
+      response->headers = add_header(response->headers, "Content-Length",
+                                     body_length_as_string);
+    }
+  }
+
+  //includes CRLF before the body
+  size_t response_length = status_line_length + headers_length + 2 + body_length;
+  char *buffer = malloc(response_length);
+
+  snprintf(buffer + strlen(buffer), response_length, "%s %s %s\r\n", http_version, status_code, reason_phrase);
+  temp_header = response->headers;
+  while(temp_header) {
+    snprintf(buffer + strlen(buffer), response_length, "%s: %s\r\n",
+            temp_header->name, temp_header->value);
+    temp_header = temp_header->next_header;
+  }
+  snprintf(buffer + strlen(buffer), response_length, "\r\n");
+  if (response->body)
+    snprintf(buffer + strlen(buffer), response_length, "%s", response->body);
+  return buffer;
+}
+
 struct http_header_t *add_header(struct http_header_t *headers, char *key, char *value) {
   char *header_name = calloc(1, strlen(key) + 1);
   strcpy(header_name, key);
