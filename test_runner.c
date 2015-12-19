@@ -19,6 +19,9 @@ void test_add_header_with_same_name(void);
 
 void test_add_to_matches(void);
 void test_collect_matching_rules_for_request(void);
+void test_http_response_to_string(void);
+void test_http_response_to_string_without_body(void);
+void test_http_response_to_string_without_content_length_header(void);
 
 void rules_parser_test_suite(void);
 
@@ -58,6 +61,10 @@ int main() {
 
   RUN_TEST("test_add_header", test_add_header);
   RUN_TEST("test_add_header_with_same_name", test_add_header_with_same_name);
+
+  RUN_TEST("test_http_response_to_string", test_http_response_to_string);
+  RUN_TEST("test_http_response_to_string_without_body", test_http_response_to_string_without_body);
+  RUN_TEST("test_http_response_to_string_without_content_length_header", test_http_response_to_string_without_content_length_header);
 
   rules_parser_test_suite();
 }
