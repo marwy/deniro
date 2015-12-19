@@ -172,3 +172,70 @@ void test_add_header_with_same_name(void) {
   den_assert_str_eq(new_headers->next_header->value,
                     "Second header's DIFFERENT value");
 }
+
+void test_http_response_to_string(void) {
+  struct http_response_t *response = http_response_new();
+  response->headers = malloc(sizeof(struct http_header_t));
+  response->headers->next_header = malloc(sizeof(struct http_header_t));
+
+  response->status_line->http_version = "HTTP/1.1";
+  response->status_line->status_code = 201;
+  response->status_line->reason_phrase = "Created";
+  response->body = "This thing you wanted to be made was indeed created.";
+  response->headers->name = "Server";
+  response->headers->value = "Taxi Driver";
+  response->headers->next_header->name = "Content-Length";
+  response->headers->next_header->value = "52";
+
+  char *result = http_response_to_string(response);
+  den_assert_str_eq(result,
+                    "HTTP/1.1 201 Created\r\n"
+                    "Server: Taxi Driver\r\n"
+                    "Content-Length: 52\r\n"
+                    "\r\n"
+                    "This thing you wanted to be made was indeed created.");
+
+}
+
+void test_http_response_to_string_without_body(void) {
+  struct http_response_t *response = http_response_new();
+  response->headers = malloc(sizeof(struct http_header_t));
+  response->headers->next_header = malloc(sizeof(struct http_header_t));
+
+  response->status_line->http_version = "HTTP/1.1";
+  response->status_line->status_code = 201;
+  response->status_line->reason_phrase = "Created";
+  response->headers->name = "Server";
+  response->headers->value = "Taxi Driver";
+  response->headers->next_header->name = "Content-Length";
+  response->headers->next_header->value = "52";
+
+  char *result = http_response_to_string(response);
+  den_assert_str_eq(result,
+                    "HTTP/1.1 201 Created\r\n"
+                    "Server: Taxi Driver\r\n"
+                    "Content-Length: 52\r\n"
+                    "\r\n");
+
+}
+
+void test_http_response_to_string_without_content_length_header(void) {
+  struct http_response_t *response = http_response_new();
+  response->headers = malloc(sizeof(struct http_header_t));
+
+  response->status_line->http_version = "HTTP/1.1";
+  response->status_line->status_code = 201;
+  response->status_line->reason_phrase = "Created";
+  response->body = "This thing you wanted to be made was indeed created.";
+  response->headers->name = "Server";
+  response->headers->value = "Taxi Driver";
+
+  char *result = http_response_to_string(response);
+  den_assert_str_eq(result,
+                    "HTTP/1.1 201 Created\r\n"
+                    "Server: Taxi Driver\r\n"
+                    "Content-Length: 52\r\n"
+                    "\r\n"
+                    "This thing you wanted to be made was indeed created.");
+
+}
