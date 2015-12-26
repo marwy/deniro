@@ -32,7 +32,9 @@ void test_rules_parser() {
   den_assert_str_eq(rules->request->super->request_line->url,
                     "/contact/delete");
   den_assert(rules->request->super->request_line->method == DELETE);
+  den_assert_str_eq(rules->request->super->request_line->http_version, "HTTP/1.1");
   den_assert_str_eq(rules->request->identifier, "generic contact req");
+  den_assert_str_eq(rules->response->super->status_line->http_version, "HTTP/1.1");
   den_assert_str_eq(rules->response->super->body, "response body");
   den_assert_str_eq(rules->response->identifier, "generic contact res");
   den_assert(rules->request->accuracy == 2);

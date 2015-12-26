@@ -180,6 +180,9 @@ struct rule_message_t *parse_rules(char *rules_string) {
             request->headers = add_header(request->headers, key, value);
             current_message->request->accuracy += 1;
           }
+          if(!request->request_line->http_version) {
+            request->request_line->http_version = "HTTP/1.1";
+          }
 
         } else if (strcmp(section_name, "res") == 0) {
           struct http_response_t *response = current_message->response->super;
@@ -211,7 +214,9 @@ struct rule_message_t *parse_rules(char *rules_string) {
             // most likely we got ourselves a header
             response->headers = add_header(response->headers, key, value);
           }
-
+          if(!response->status_line->http_version) {
+            response->status_line->http_version = "HTTP/1.1";
+          }
         };
         free(key);
         advance_to_next_line(rules_string, &current_line_begin, &current_line_end);
