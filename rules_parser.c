@@ -139,6 +139,9 @@ struct rule_message_t *parse_rules(char *rules_string) {
 
       if (strcmp(section_name, "req") == 0) {
         current_message = rule_message_new();
+        // setting default for the response to cut on verbosity in rules file
+        current_message->response->super->status_line->status_code = 200;
+        current_message->response->super->status_line->reason_phrase = "OK";
       }
 
 
@@ -203,6 +206,7 @@ struct rule_message_t *parse_rules(char *rules_string) {
             int status_code = atoi(value);
             if (status_code) {
               response->status_line->status_code = status_code;
+              // TODO: infer reason_phrase from status_code and set it?
             }
             else
               fprintf(stderr, "Couldn't parse value: %s to integer\n", value);
