@@ -2,6 +2,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 #include <fcntl.h>
@@ -9,12 +10,17 @@
 #include <sys/poll.h>
 #include <netdb.h>
 
+#include "http.h"
+#include "rules_parser.h"
+
 
 #define INITIAL_NUMBER_OF_DESCRIPTORS 2
-#define RESIZE_BY_AMOUNT 100
+#define RESIZE_DESCRIPTORS_AND_CONNECTIONS_BY_AMOUNT 100
 #define MAX_MESSAGE_SIZE (sizeof(char) * 1024 * 8)
 
 int NUMBER_OF_DESCRIPTORS = INITIAL_NUMBER_OF_DESCRIPTORS;
+
+#define RESIZE_MATCHES_BY_AMOUNT 20
 
 enum server_error {
   OUT_OF_ROOM = -1
@@ -71,8 +77,9 @@ int on_accept_new_client(struct pollfd **sd, size_t sd_index, struct addrinfo *a
     int add_new_client_result = add_new_client(socket_descriptors, new_client);
     if (add_new_client_result == OUT_OF_ROOM) {
       int old_number_of_descriptors = NUMBER_OF_DESCRIPTORS;
-      int resize_sd_and_conns_result = resize_socket_descriptors_and_connections(RESIZE_BY_AMOUNT, old_number_of_descriptors,
-                                                sd, connections);
+      int resize_sd_and_conns_result = resize_socket_descriptors_and_connections(RESIZE_DESCRIPTORS_AND_CONNECTIONS_BY_AMOUNT,
+                                                                                 old_number_of_descriptors,
+                                                                                 sd, connections);
       if (resize_sd_and_conns_result != 0) {
         fprintf(stderr, "Resizing borked but didn't crash, how is that even possible?\n");
         abort();
@@ -87,7 +94,8 @@ int on_accept_new_client(struct pollfd **sd, size_t sd_index, struct addrinfo *a
   return 0;
 }
 
-int on_receive_from_client(struct pollfd socket_descriptors[], size_t sd_index, char message[]) {
+int on_receive_from_client(struct pollfd socket_descriptors[], size_t sd_index) {
+  char message[MAX_MESSAGE_SIZE];
   ssize_t bytes_received = 0;
   bytes_received = recv(socket_descriptors[sd_index].fd, message, MAX_MESSAGE_SIZE, 0);
   if (bytes_received == -1) {
@@ -101,7 +109,6 @@ int on_receive_from_client(struct pollfd socket_descriptors[], size_t sd_index, 
   else {
     connections[sd_index] = (struct connection) {.socket_fd=socket_descriptors[sd_index].fd};
     strcpy(connections[sd_index].recv_buffer, message);
-    strcpy(connections[sd_index].send_buffer, "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\n\r\n");
     memset(message, 0, MAX_MESSAGE_SIZE);
   }
   return 0;
@@ -135,8 +142,86 @@ int on_send_to_client(struct pollfd socket_descriptors[], size_t sd_index) {
   return 0;
 }
 
+struct rule_message_t **add_to_matches(struct rule_message_t *matches[],
+                                      size_t *matches_reserved_length,
+                                      struct rule_message_t *message,
+                                      ssize_t *index_last_written_to) {
+  *index_last_written_to = *index_last_written_to + 1;
+  if (*index_last_written_to + 1 > *matches_reserved_length) {
+    struct rule_message_t **temp;
+    temp = realloc(matches, sizeof(struct rule_message_t *) * (*matches_reserved_length + RESIZE_MATCHES_BY_AMOUNT));
+    if (temp == NULL) {
+      fprintf(stderr, "Couldn't reallocate matches\n");
+      exit(EXIT_FAILURE);
+    }
+    *matches_reserved_length = *matches_reserved_length + RESIZE_MATCHES_BY_AMOUNT;
+    matches = temp;
+  }
+  matches[*index_last_written_to] = message;
+  return matches;
+};
 
-int server_loop() {
+struct rule_message_t **collect_matching_rules_for_request(struct http_request_t *parsed_request,
+                                                          struct rule_message_t *rule_messages,
+                                                          size_t *matching_rules_length) {
+  size_t matches_reserved_capacity = 10;
+  struct rule_message_t **matches = calloc(matches_reserved_capacity, sizeof(struct rule_message_t *));
+  ssize_t index_last_written_to = -1;
+
+  struct rule_message_t *temp_message = rule_messages;
+  while (temp_message) {
+    struct http_request_t *request = temp_message->request->super;
+    if (request->request_line->url) {
+      if (!(strcmp(request->request_line->url, parsed_request->request_line->url) == 0))
+        goto no_match_continue;
+    }
+    if (request->request_line->method) {
+      if (!(request->request_line->method == parsed_request->request_line->method))
+        goto no_match_continue;
+    }
+    if (request->body) {
+      if (!(strcmp(request->body, parsed_request->body) == 0))
+        goto no_match_continue;
+    }
+    if (request->headers) {
+      struct http_header_t *rule_header = request->headers;
+      while (rule_header) {
+        struct http_header_t *parsed_request_header = parsed_request->headers;
+        bool found = false;
+        while (parsed_request_header) {
+          if (strcmp(rule_header->name, parsed_request_header->name) == 0) {
+            found = true;
+            if (!(strcmp(rule_header->value, parsed_request_header->value) == 0)) {
+              goto no_match_continue;
+            }
+          }
+          parsed_request_header = parsed_request_header->next_header;
+        }
+        if (!found)
+          goto no_match_continue;
+        rule_header = rule_header->next_header;
+      }
+    }
+    matches = add_to_matches(matches, &matches_reserved_capacity, temp_message, &index_last_written_to);
+  no_match_continue:
+    temp_message = temp_message->next;
+  }
+
+  *matching_rules_length = index_last_written_to + 1;
+  return matches;
+}
+
+struct rule_message_t *get_best_matching_rule(struct rule_message_t *matching_rules[],
+                                              size_t matching_rules_length) {
+  struct rule_message_t *best_match = matching_rules[0];
+  for(size_t i = 0; i < matching_rules_length; i++) {
+    if (matching_rules[i]->request->accuracy > best_match->request->accuracy)
+      best_match = matching_rules[i];
+  }
+  return best_match;
+}
+
+int server_loop(struct rule_message_t *rule_messages) {
 
   struct addrinfo *res, hints;
   memset(&hints, 0, sizeof hints);
@@ -176,8 +261,6 @@ int server_loop() {
     perror("fctnl nonblock");
   }
 
-  char message[MAX_MESSAGE_SIZE];
-
   while(1) {
     int poll_result = poll(socket_descriptors, NUMBER_OF_DESCRIPTORS + 1, -1);
     if (poll_result == -1) {
@@ -193,9 +276,28 @@ int server_loop() {
             }
           }
           else {
-            int received = on_receive_from_client(socket_descriptors, i, message);
+            int received = on_receive_from_client(socket_descriptors, i);
             if (received == -1)
               fprintf(stderr, "on_receive_from_client failed\n");
+            else {
+              struct http_request_t *parsed_request = parse_http_request(connections[i].recv_buffer);
+
+              struct rule_message_t **matching_rules, *best_matching_rule;
+              size_t matching_rules_length = 0;
+              matching_rules = collect_matching_rules_for_request(parsed_request,
+                                                                  rule_messages,
+                                                                  &matching_rules_length);
+              if (matching_rules_length != 0) {
+                best_matching_rule = get_best_matching_rule(matching_rules,
+                                                            matching_rules_length);
+                char *response_string = http_response_to_string(best_matching_rule->response->super);
+                memcpy(connections[i].send_buffer, response_string, strlen(response_string));
+              } else {
+                printf("**** NO matching response for url: %s\n", parsed_request->request_line->url);
+                // TODO: send 404 or 500 or something else?
+              }
+
+            }
           }
         }
         else if (socket_descriptors[i].revents & POLLOUT) {

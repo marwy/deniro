@@ -1,6 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-int server_loop(void);
+struct rule_message_t;
+int server_loop(struct rule_message_t *rule_messages);
 
 #endif

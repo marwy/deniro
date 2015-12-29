@@ -16,14 +16,12 @@ void test_copy_http_request(void);
 void test_copy_http_response(void);
 void test_add_header(void);
 void test_add_header_with_same_name(void);
-
-void test_add_to_matches(void);
-void test_collect_matching_rules_for_request(void);
 void test_http_response_to_string(void);
 void test_http_response_to_string_without_body(void);
 void test_http_response_to_string_without_content_length_header(void);
 
 void rules_parser_test_suite(void);
+void server_test_suite(void);
 
 int main() {
   char *buffer = "POST /test-url/ HTTP/1.1\r\nHost: localhost\r\nUser-Agent: I'm a robot 0.1\r\nContent-Length: 23\r\n\r\ndelete=this&update=that";
@@ -67,4 +65,5 @@ int main() {
   RUN_TEST("test_http_response_to_string_without_content_length_header", test_http_response_to_string_without_content_length_header);
 
   rules_parser_test_suite();
+  server_test_suite();
 }
