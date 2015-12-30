@@ -48,6 +48,8 @@ char *http_response_to_string(struct http_response_t *response) {
   struct http_header_t *temp_header;
 
   const char *http_version = response->status_line->http_version;
+  if (!http_version)
+    http_version = "HTTP/1.1";
   char *status_code = malloc(5); // max of uint16
   sprintf(status_code, "%d", response->status_line->status_code);
   const char *reason_phrase = response->status_line->reason_phrase;
