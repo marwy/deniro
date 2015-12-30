@@ -280,7 +280,11 @@ int server_loop(struct rule_message_t *rule_messages) {
             if (received == -1)
               fprintf(stderr, "on_receive_from_client failed\n");
             else {
+              // we don't care about empty buffers
+              if (!strlen(connections[i].recv_buffer))
+                continue;
               struct http_request_t *parsed_request = parse_http_request(connections[i].recv_buffer);
+              char *response_string;
 
               struct rule_message_t **matching_rules, *best_matching_rule;
               size_t matching_rules_length = 0;
@@ -290,13 +294,16 @@ int server_loop(struct rule_message_t *rule_messages) {
               if (matching_rules_length != 0) {
                 best_matching_rule = get_best_matching_rule(matching_rules,
                                                             matching_rules_length);
-                char *response_string = http_response_to_string(best_matching_rule->response->super);
-                memcpy(connections[i].send_buffer, response_string, strlen(response_string));
+                response_string = http_response_to_string(best_matching_rule->response->super);
               } else {
                 printf("**** NO matching response for url: %s\n", parsed_request->request_line->url);
-                // TODO: send 404 or 500 or something else?
+                struct http_response_t *response = http_response_new();
+                response->status_line->status_code = 404;
+                response->status_line->reason_phrase = "Not Found";
+                response->body = "Couldn't match any rule to this request.";
+                response_string = http_response_to_string(response);
               }
-
+              memcpy(connections[i].send_buffer, response_string, strlen(response_string));
             }
           }
         }
