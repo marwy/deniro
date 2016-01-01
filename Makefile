@@ -1,7 +1,7 @@
 TARGET = deniro
 LIBS =
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -Wextra -Werror -fdiagnostics-color=auto # or ..-color=always
 
 .PHONY: default all clean
 .PRECIOUS: $(TARGET)
