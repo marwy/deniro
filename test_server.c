@@ -127,16 +127,24 @@ void test_get_best_matching_rule(void) {
   struct rule_message_t **matching_rules = calloc(4, sizeof(struct rule_message_t *));
   matching_rules[0] = &(struct rule_message_t) {
     .request=&(struct rule_request_t) {
-      .accuracy = 10 }};
+      .accuracy = 10 },
+    .response=NULL
+  };
   matching_rules[1] = &(struct rule_message_t) {
     .request=&(struct rule_request_t) {
-      .accuracy = 5 }};
+      .accuracy = 5 },
+    .response=NULL,
+  };
   matching_rules[2] = &(struct rule_message_t) {
     .request=&(struct rule_request_t) {
-      .accuracy = 20 }};
+      .accuracy = 20 },
+    .response=NULL
+  };
   matching_rules[3] = &(struct rule_message_t) {
     .request=&(struct rule_request_t) {
-      .accuracy = 13 }};
+      .accuracy = 13 },
+    .response=NULL
+  };
   size_t matching_rules_length = 4;
   best_matching_rule = get_best_matching_rule(matching_rules, matching_rules_length);
   den_assert(best_matching_rule->request->accuracy == 20);

@@ -114,9 +114,9 @@ int on_receive_from_client(struct pollfd socket_descriptors[], size_t sd_index) 
   return 0;
 }
 
-int on_send_to_client(struct pollfd socket_descriptors[], size_t sd_index) {
+int on_send_to_client(size_t sd_index) {
   struct connection conn = connections[sd_index];
-  int total_sent = 0;
+  size_t total_sent = 0;
   int bytes_sent = 0;
   size_t buffer_actual_length = strlen(conn.send_buffer);
   bytes_sent = send(conn.socket_fd, conn.send_buffer, buffer_actual_length, 0);
@@ -143,7 +143,7 @@ int on_send_to_client(struct pollfd socket_descriptors[], size_t sd_index) {
 }
 
 struct rule_message_t **add_to_matches(struct rule_message_t *matches[],
-                                      size_t *matches_reserved_length,
+                                      ssize_t *matches_reserved_length,
                                       struct rule_message_t *message,
                                       ssize_t *index_last_written_to) {
   *index_last_written_to = *index_last_written_to + 1;
@@ -164,7 +164,7 @@ struct rule_message_t **add_to_matches(struct rule_message_t *matches[],
 struct rule_message_t **collect_matching_rules_for_request(struct http_request_t *parsed_request,
                                                           struct rule_message_t *rule_messages,
                                                           size_t *matching_rules_length) {
-  size_t matches_reserved_capacity = 10;
+  ssize_t matches_reserved_capacity = 10;
   struct rule_message_t **matches = calloc(matches_reserved_capacity, sizeof(struct rule_message_t *));
   ssize_t index_last_written_to = -1;
 
@@ -297,6 +297,7 @@ int server_loop(struct rule_message_t *rule_messages) {
                 response_string = http_response_to_string(best_matching_rule->response->super);
               } else {
                 printf("**** NO matching response for url: %s\n", parsed_request->request_line->url);
+                // maybe change it to 400?
                 struct http_response_t *response = http_response_new();
                 response->status_line->status_code = 404;
                 response->status_line->reason_phrase = "Not Found";
@@ -311,7 +312,7 @@ int server_loop(struct rule_message_t *rule_messages) {
           if (socket_descriptors[i].fd != master_socket) {
               struct connection conn = connections[i];
               if ((conn.socket_fd != 0) && (conn.socket_fd == socket_descriptors[i].fd)) {
-                int sent = on_send_to_client(socket_descriptors, i);
+                int sent = on_send_to_client(i);
                 if (sent == -1)
                   fprintf(stderr, "on_send_to_client failed\n");
               }

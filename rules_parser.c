@@ -29,7 +29,7 @@ char *read_rules_file(const char *path) {
   return file_content;
 };
 
-int advance_to_next_line(char *rules_string, int *begin, int *end) {
+int advance_to_next_line(char *rules_string, size_t *begin, size_t *end) {
   size_t rules_string_len = strlen(rules_string);
   if (!*end && (*end >= strlen(rules_string)))
       return -1;
@@ -63,7 +63,7 @@ char *parse_key(char *rules_string, int line_begin, int line_end, int *equal_sig
   }
   size_t key_length = (line_begin_temp - line_begin) - 1;
   char *key = malloc(key_length);
-  for (int i = 0; i < key_length; i++) {
+  for (size_t i = 0; i < key_length; i++) {
     char ch = rules_string[line_begin + i];
     if (!isspace(ch))
       key[i] = ch;
@@ -73,7 +73,7 @@ char *parse_key(char *rules_string, int line_begin, int line_end, int *equal_sig
   return key;
 };
 
-char *parse_value(char *rules_string, int *line_begin, int *line_end, int value_pos) {
+char *parse_value(char *rules_string, size_t *line_begin, size_t *line_end, int value_pos) {
   size_t value_length = 0;
   uint8_t multiline_value = 0;
   while (1) {
@@ -98,7 +98,7 @@ char *parse_value(char *rules_string, int *line_begin, int *line_end, int value_
     value_length = (*line_end - value_pos);
   }
   char *value = malloc(value_length);
-  for (int i = 0, si = 0; i < value_length; i++, si++) {
+  for (size_t i = 0, si = 0; i < value_length; i++, si++) {
     char ch = rules_string[value_pos + i];
     value[si] = ch;
   };
@@ -122,9 +122,9 @@ struct rule_message_t *rule_message_new(void) {
 };
 
 struct rule_message_t *parse_rules(char *rules_string) {
-  int current_line_begin = 0;
+  size_t current_line_begin = 0;
   // new beginning is basically an end + 1, so (-1) + 1 gets us a real beginning for the first line
-  int current_line_end = -1;
+  size_t current_line_end = -1;
   char section_name[3];
   struct rule_message_t *current_message = {0};
   struct rule_message_t *rule_message = NULL;

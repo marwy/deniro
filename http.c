@@ -20,7 +20,7 @@ struct http_response_t *http_response_new(void) {
 
 enum HTTP_METHOD http_method_string_to_enum(char *string) {
   if (islower(string[0])) {
-    for(int i = 0; i < strlen(string); i++) {
+    for(size_t i = 0; i < strlen(string); i++) {
       string[i] = toupper(string[i]);
     };
   }
