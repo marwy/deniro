@@ -221,7 +221,7 @@ struct rule_message_t *get_best_matching_rule(struct rule_message_t *matching_ru
   return best_match;
 }
 
-int server_loop(struct rule_message_t *rule_messages) {
+int server_loop(struct rule_message_t *rule_messages, const char *server_port) {
 
   struct addrinfo *res, hints;
   memset(&hints, 0, sizeof hints);
@@ -235,9 +235,12 @@ int server_loop(struct rule_message_t *rule_messages) {
   connections = malloc((INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct connection));
   memset(connections, 0, (INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct connection));
 
-  if (getaddrinfo(NULL, "2000", &hints, &res) == -1) {
+  if (strlen(server_port) == 0)
+    server_port = "8080";
+  if (getaddrinfo(NULL, server_port, &hints, &res) == -1) {
     perror("getaddrinfo");
   }
+  printf("Listening on port %s\n", server_port);
 
   int master_socket = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (master_socket == -1) {
