@@ -42,6 +42,16 @@ enum HTTP_METHOD http_method_string_to_enum(char *string) {
   }
 };
 
+size_t header_length_including_whitespace(char *key, char *value) {
+  size_t length = 0;
+  length += strlen(key);
+  length += 1; // colon
+  length += 1; // space
+  length += strlen(value);
+  length += 2; // CRLF
+  return length;
+};
+
 char *http_response_to_string(struct http_response_t *response) {
   size_t headers_length = 0;
   size_t body_length = 0;
@@ -59,10 +69,8 @@ char *http_response_to_string(struct http_response_t *response) {
 
   temp_header = response->headers;
   while(temp_header) {
-    // includes space for colon, space and CRLF
-    size_t header_length = strlen(temp_header->name) +
-      strlen(temp_header->value) + 4;
-    headers_length += header_length;
+    headers_length += header_length_including_whitespace(temp_header->name,
+                                                         temp_header->value);
     temp_header = temp_header->next_header;
   }
 
@@ -83,6 +91,8 @@ char *http_response_to_string(struct http_response_t *response) {
       snprintf(body_length_as_string, 1024, "%zd", body_length);
       response->headers = add_header(response->headers, "Content-Length",
                                      body_length_as_string);
+      headers_length += header_length_including_whitespace("Content-Length",
+                                                           body_length_as_string);
     }
   }
 
@@ -90,7 +100,7 @@ char *http_response_to_string(struct http_response_t *response) {
   size_t response_length = status_line_length + headers_length + 2 + body_length;
   char *buffer = malloc(response_length + 1);
 
-  snprintf(buffer + strlen(buffer), response_length, "%s %s %s\r\n", http_version, status_code, reason_phrase);
+  snprintf(buffer, response_length, "%s %s %s\r\n", http_version, status_code, reason_phrase);
   temp_header = response->headers;
   while(temp_header) {
     snprintf(buffer + strlen(buffer), response_length, "%s: %s\r\n",
