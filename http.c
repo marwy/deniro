@@ -88,7 +88,7 @@ char *http_response_to_string(struct http_response_t *response) {
 
   //includes CRLF before the body
   size_t response_length = status_line_length + headers_length + 2 + body_length;
-  char *buffer = malloc(response_length);
+  char *buffer = malloc(response_length + 1);
 
   snprintf(buffer + strlen(buffer), response_length, "%s %s %s\r\n", http_version, status_code, reason_phrase);
   temp_header = response->headers;
