@@ -62,7 +62,7 @@ char *parse_key(char *rules_string, int line_begin, int line_end, int *equal_sig
     exit(EXIT_FAILURE);
   }
   size_t key_length = (line_begin_temp - line_begin) - 1;
-  char *key = malloc(key_length);
+  char *key = malloc(key_length + 1);
   for (size_t i = 0; i < key_length; i++) {
     char ch = rules_string[line_begin + i];
     if (!isspace(ch))
@@ -97,7 +97,7 @@ char *parse_value(char *rules_string, size_t *line_begin, size_t *line_end, int 
   else {
     value_length = (*line_end - value_pos);
   }
-  char *value = malloc(value_length);
+  char *value = malloc(value_length + 1);
   for (size_t i = 0, si = 0; i < value_length; i++, si++) {
     char ch = rules_string[value_pos + i];
     value[si] = ch;
