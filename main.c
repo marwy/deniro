@@ -18,7 +18,7 @@ struct app_args process_app_arguments(int argc, char *argv[]) {
   }
   int option_index = 0;
   int getopt_long_result;
-  struct app_args args;
+  struct app_args args = {0};
   struct option long_options[] = {
     {"rules_file", required_argument, 0, 'r'},
     {"port", required_argument, 0, 'p'},
@@ -37,6 +37,10 @@ struct app_args process_app_arguments(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
   struct app_args args = process_app_arguments(argc, argv);
+  if (!args.rules_file_name) {
+    fprintf(stderr, "Path to rules file needs to be supplied\n");
+    exit(EXIT_FAILURE);
+  }
   char *rules_string = read_rules_file(args.rules_file_name);
   struct rule_message_t *rule_messages = parse_rules(rules_string);
   server_loop(rule_messages, args.server_port);
