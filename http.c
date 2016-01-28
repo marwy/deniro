@@ -191,7 +191,7 @@ struct http_request_t *parse_http_request(char *buffer) {
     while(buffer[buffer_index] != ':' && buffer_index < buffer_length)
       buffer_index++;
     size_t header_key_length = buffer_index - header_key_start;
-    char *header_key = malloc(header_key_length);
+    char *header_key = malloc(header_key_length + 1);
     for (size_t i = 0; i < header_key_length; i++) {
       header_key[i] = buffer[i + header_key_start];
     }
@@ -202,7 +202,7 @@ struct http_request_t *parse_http_request(char *buffer) {
       buffer_index++;
     size_t header_value_end = buffer_index++;
     size_t header_value_length = header_value_end - header_value_start;
-    char *header_value = malloc(header_value_length);
+    char *header_value = malloc(header_value_length + 1);
     for (size_t i = 0; i < header_value_length; i++) {
       header_value[i] = buffer[i + header_value_start];
     }
