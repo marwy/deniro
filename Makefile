@@ -22,6 +22,9 @@ test: http.o rules_parser.o server.o test_http.o test_server.o test_rules_parser
 	$(CC) http.o rules_parser.o server.o test_http.o test_server.o test_rules_parser.o test_runner.o  -Wall $(LIBS) -o test_$(TARGET)
 	./test_$(TARGET)
 
+memcheck: all
+	valgrind ./$(TARGET) --port 8008 --rules_file=test_rules.txt 2>&1
+
 clean:
 	-rm -f *.o
 	-rm -f $(TARGET)
