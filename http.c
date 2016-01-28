@@ -114,8 +114,7 @@ char *http_response_to_string(struct http_response_t *response) {
 }
 
 struct http_header_t *add_header(struct http_header_t *headers, char *key, char *value) {
-  char *header_name = calloc(1, strlen(key) + 1);
-  strcpy(header_name, key);
+  char *header_name = strdup(key);
   if (!headers) {
     headers = calloc(1, sizeof(struct http_header_t));
     headers->name = header_name;
@@ -270,12 +269,8 @@ void copy_http_headers(struct http_header_t **dest_hdr,
     }
     if (!found) {
       struct http_header_t *temp_header = malloc(sizeof(struct http_header_t));
-      char *name = malloc(strlen(temp_source_header->name) + 1);
-      strcpy(name, temp_source_header->name);
-      char *value = malloc(strlen(temp_source_header->value) + 1);
-      strcpy(value, temp_source_header->value);
-      temp_header->name = name;
-      temp_header->value = value;
+      temp_header->name = strdup(temp_source_header->name);
+      temp_header->value = strdup(temp_source_header->value);
       if (!*dest_hdr)
         *dest_hdr = temp_header;
       if (!last_header)
