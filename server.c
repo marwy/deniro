@@ -265,7 +265,7 @@ int server_loop(struct rule_message_t *rule_messages, const char *server_port) {
   }
 
   while(1) {
-    int poll_result = poll(socket_descriptors, NUMBER_OF_DESCRIPTORS + 1, -1);
+    int poll_result = poll(socket_descriptors, NUMBER_OF_DESCRIPTORS, -1);
     if (poll_result == -1) {
       perror("poll");
     }
