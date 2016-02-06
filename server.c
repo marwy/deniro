@@ -235,7 +235,7 @@ int server_loop(struct rule_message_t *rule_messages, const char *server_port) {
   connections = malloc((INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct connection));
   memset(connections, 0, (INITIAL_NUMBER_OF_DESCRIPTORS + 1) * sizeof(struct connection));
 
-  if (strlen(server_port) == 0)
+  if (!server_port)
     server_port = "8080";
   if (getaddrinfo(NULL, server_port, &hints, &res) == -1) {
     perror("getaddrinfo");
