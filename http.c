@@ -115,22 +115,23 @@ char *http_response_to_string(struct http_response_t *response) {
 
 struct http_header_t *add_header(struct http_header_t *headers, char *key, char *value) {
   char *header_name = strdup(key);
+  char *header_value = strdup(value);
   if (!headers) {
     headers = calloc(1, sizeof(struct http_header_t));
     headers->name = header_name;
-    headers->value = value;
+    headers->value = header_value;
   }
   else {
     struct http_header_t *temp_header = headers;
     while (1) {
       if (strcmp(temp_header->name, header_name) == 0) {
-        temp_header->value = value;
+        temp_header->value = header_value;
         break;
       }
       if (!temp_header->next_header) {
         struct http_header_t *next_header = calloc(1, sizeof(struct http_header_t));
         next_header->name = header_name;
-        next_header->value = value;
+        next_header->value = header_value;
         temp_header->next_header = next_header;
         break;
       }
